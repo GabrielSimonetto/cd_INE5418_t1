@@ -19,7 +19,21 @@ int main()
 	int server_sockfd = 0;
 	int client_sockfd = 0;
     char str[MESSAGE_SIZE];
+	char server_database[SERVER_SIZE];
 
+	/* Inicializar server_database */         
+	for (int i = 0; i < SERVER_SIZE; i++) {
+		server_database[i] = 'O';
+	}
+
+	// to be removed -- soh pra checar a leitura dps
+	server_database[1] = '1';
+	server_database[3] = '3';
+	server_database[5] = '5';
+
+
+
+	/* Inicialização de sockets */         
 	struct sockaddr_in address;
 	server_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 	address.sin_family = AF_INET;
@@ -28,6 +42,7 @@ int main()
 	bind(server_sockfd, (struct sockaddr*)&address , sizeof(address));
 	listen(server_sockfd , 20);
  
+	/* Esperando um unico cliente uma unica vez */         
 	printf("\nServer rodando, aguardando contato com cliente\n");
 	fflush(stdout);
 	client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
@@ -35,6 +50,11 @@ int main()
 	fflush(stdout);
 	while(1)
 	{
+		/* Operações pós conexão */         
+
+		// assumindo "ler" e "sair"
+		// 
+
         read(client_sockfd, &str, MESSAGE_SIZE);
 		// printf("%s\n", str);
 		// printf("%d\n", strlen(str)+1);
@@ -43,12 +63,43 @@ int main()
 
 		if(strcmp(str,"sair")==0){
             break;
-        }
- 
-		write(client_sockfd, &str, strlen(str)+1);
+		}
+
+		// [ ] - Le(Posicao4, tamanho)
+		char starting_position_arg[100], size_arg[100];
+		int starting_position, size;
+
+		read(client_sockfd, &starting_position_arg, 100);
+		printf("\n starting_position_arg: %s\n", starting_position_arg);
+		fflush(stdout);
+
+		read(client_sockfd, &size_arg, 100);
+		printf("\n size_arg: %s\n", size_arg);
+		fflush(stdout);
+
+		starting_position = atoi(starting_position_arg);
+        size = atoi(size_arg);
+
+		char output[size];
+
+		for(int i=starting_position; i < (starting_position+size); i++) {
+			printf("%d\n", i);
+			fflush(stdout);
+			output[i] = server_database[i + starting_position];
+			printf("%d\n\n", output[i]);
+			fflush(stdout);
+		}
+
+		printf("\n server_database: %s\n", server_database);
+		fflush(stdout);
+
+		printf("\n output: %s\n", output);
+		fflush(stdout);
+
+		write(client_sockfd, &output, SERVER_SIZE);
         sleep(1);
      }
-	close(client_sockfd);
+ 	 close(client_sockfd);
  
      return 0;
 }

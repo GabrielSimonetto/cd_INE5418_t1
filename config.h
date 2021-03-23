@@ -1,1 +1,2 @@
 #define MESSAGE_SIZE 100
+#define SERVER_SIZE 1024
