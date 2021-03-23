@@ -16,9 +16,9 @@ int main()
 {
     int sockfd = 0;
     int n = 0;
-    char dataReceived[MESSAGE_SIZE];
+    char dataReceived[MESSAGE_SIZE] = "";
     struct sockaddr_in address;
-    char command[MESSAGE_SIZE];
+    char command[MESSAGE_SIZE] = "";
     size_t initial_position_argument;
     size_t length_argument;
 
@@ -54,21 +54,21 @@ int main()
         }
 
         // write inicial
-        char input[MESSAGE_SIZE];
+        char input[MESSAGE_SIZE] = "";
         printf("ponto_inicial\n");
         fflush(stdout);
         scanf("%s", input);        
 		write(sockfd, &input, MESSAGE_SIZE);
 
         // write size
-        char input2[MESSAGE_SIZE];
+        char input2[MESSAGE_SIZE] = "";
         printf("size\n");
         fflush(stdout);
         scanf("%s", input2);        
 		write(sockfd, &input2, MESSAGE_SIZE);
 
         // read resultado
-        char output[SERVER_SIZE];
+        char output[SERVER_SIZE] = "";
 		read(sockfd, &output, SERVER_SIZE);
 		printf("\n OUTPUT: %s\n", output);
 		fflush(stdout);

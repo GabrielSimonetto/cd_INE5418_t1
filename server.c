@@ -15,15 +15,15 @@
 int main()
 {
     time_t clock;
-	char dataSending[MESSAGE_SIZE];
+	char dataSending[MESSAGE_SIZE] = "";
 	int server_sockfd = 0;
 	int client_sockfd = 0;
-    char str[MESSAGE_SIZE];
+    char str[MESSAGE_SIZE] = "";
 	char server_database[SERVER_SIZE];
 
 	/* Inicializar server_database */         
 	for (int i = 0; i < SERVER_SIZE; i++) {
-		server_database[i] = 'O';
+		server_database[i] = 'T';
 	}
 
 	// to be removed -- soh pra checar a leitura dps
@@ -66,7 +66,8 @@ int main()
 		}
 
 		// [ ] - Le(Posicao4, tamanho)
-		char starting_position_arg[100], size_arg[100];
+		char starting_position_arg[100] = "";
+		char size_arg[100] = "";
 		int starting_position, size;
 
 		read(client_sockfd, &starting_position_arg, 100);
@@ -80,13 +81,13 @@ int main()
 		starting_position = atoi(starting_position_arg);
         size = atoi(size_arg);
 
-		char output[size];
+		char output[SERVER_SIZE] = "";
 
 		for(int i=starting_position; i < (starting_position+size); i++) {
 			printf("%d\n", i);
 			fflush(stdout);
-			output[i] = server_database[i + starting_position];
-			printf("%d\n\n", output[i]);
+			output[i-starting_position] = server_database[i];
+			printf("%d\n\n", output[i-starting_position]);
 			fflush(stdout);
 		}
 
