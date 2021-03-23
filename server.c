@@ -8,15 +8,17 @@
 #include <arpa/inet.h> 
 #include <sys/socket.h> 
 #include <netinet/in.h> 
- 
+
+#include "config.h"
+
+
 int main()
 {
     time_t clock;
-	char dataSending[100];
+	char dataSending[MESSAGE_SIZE];
 	int server_sockfd = 0;
 	int client_sockfd = 0;
-    char str[100];
-
+    char str[MESSAGE_SIZE];
 
 	struct sockaddr_in address;
 	server_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -26,21 +28,24 @@ int main()
 	bind(server_sockfd, (struct sockaddr*)&address , sizeof(address));
 	listen(server_sockfd , 20);
  
-	printf("\nServer rodando, aguardando contato com cliente\n"); 
+	printf("\nServer rodando, aguardando contato com cliente\n");
+	fflush(stdout);
 	client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
-	printf("\nCliente conectado\n"); 
+	printf("\nCliente conectado\n");
+	fflush(stdout);
 	while(1)
 	{
-        read(client_sockfd, &str, 100);
+        read(client_sockfd, &str, MESSAGE_SIZE);
 		// printf("%s\n", str);
 		// printf("%d\n", strlen(str)+1);
+		printf("\nRecebemos: %s\n", str);
+		fflush(stdout);
+
 		if(strcmp(str,"sair")==0){
             break;
         }
-		printf("\nRecebemos: %s\n", str); 
  
 		write(client_sockfd, &str, strlen(str)+1);
- 
         sleep(1);
      }
 	close(client_sockfd);

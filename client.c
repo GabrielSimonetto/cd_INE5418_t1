@@ -8,14 +8,17 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
- 
+
+#include "config.h"
+
+
 int main()
 {
     int sockfd = 0;
     int n = 0;
-    char dataReceived[100];
+    char dataReceived[MESSAGE_SIZE];
     struct sockaddr_in address;
-    char str[100];
+    char str[MESSAGE_SIZE];
  
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -36,21 +39,18 @@ int main()
  
     while (1)
     {
-        printf("\nÓtimo! Agora me envie algo para ser ecoado\n"); 
+        printf("\nÓtimo! Agora me envie algo para ser ecoado\n");
+        fflush(stdout);
         scanf("%s", str);
-        printf("%s\n", str);
-        printf("%d\n", strlen(str)+1);
         if(strcmp(str,"sair")==0){
             break;
         }
         write(sockfd, &str, strlen(str)+1);
-        read(sockfd, &dataReceived, 100);
-        // printf("%s\n", dataReceived);    
+        read(sockfd, &dataReceived, MESSAGE_SIZE);
+        printf("%s\n", dataReceived);
+		fflush(stdout);
     }
     
-    // read(sockfd, &dataReceived, 1);
-    // printf("Caractere recebido pelo server: %c\n", dataReceived);
-
     if( n < 0)
     {
         printf("Erro \n");
