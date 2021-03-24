@@ -1,13 +1,9 @@
-all: clean server client
-build: server client
+.PHONY: all
+all: server client
 
-server: 
-	gcc server.c -o server
+.PHONY: rebuild
+rebuild: clean all
 
-client:
-	gcc client.c -o client
-
+.PHONY: clean
 clean:
-	rm server && rm client
-
-
+  rm -f server client
