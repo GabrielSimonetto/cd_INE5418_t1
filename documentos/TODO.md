@@ -1,3 +1,15 @@
+Cronograma:
+
+[x] - Dia 24: Um cliente lê de um servidor
+[ ] - Dia 26: Varios clientes leem/escrevem de um servidor
+[ ] - Dia 28: Ter Varios servidores (MxN provavelmente)
+[ ] - Dia 30: Resolver Data Races (Enfiar mutexes e semáforos)
+[ ] - Dia 02: Começar Loggers (Tempo de exploração)
+[ ] - Dia 04: Terminar Loggers (Tempo de exploração)
+[ ] - Dia 04: Fazer Relatório
+[ ] - Dia 04: Entregar
+
+
 Parte 1:
 [ ] - Criar UM espaço de memória para UM cliente
     [ ] - Escrever
