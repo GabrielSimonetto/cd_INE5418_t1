@@ -69,16 +69,16 @@ int main()
         // send command to server
 		write(sockfd, &command, MESSAGE_SIZE);
 
-		if (strcmp(command, "escrever") == 0) {
-			// escrever_client_procedure();
-			printf("todo");
-		} else if (strcmp(command, "ler") == 0) {
-			ler_client_procedure(sockfd);
-		} else if (strcmp(command, "sair") == 0){
+        if (strcmp(command, "escrever") == 0) {
+            // escrever_client_procedure();
+            printf("todo");
+        } else if (strcmp(command, "ler") == 0) {
+            ler_client_procedure(sockfd);
+        } else if (strcmp(command, "sair") == 0) {
             break;
-		} else {
-			printf("\nComando nao reconhecido, aguardando novo comando.\n");
-		}
+        } else {
+            printf("\nComando nao reconhecido, aguardando novo comando.\n");
+        }
     }
     
     if( n < 0)
