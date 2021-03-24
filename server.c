@@ -12,26 +12,70 @@
 #include "config.h"
 
 
+
+void initialize_server_database(char* server_database) {
+
+	// Inicializar com um caractere facil de ver      
+	for (int i = 0; i < SERVER_SIZE; i++) {
+		server_database[i] = 'T';
+	}
+
+	// Colocar uns caracteres pra diferenciar as operações
+	server_database[1] = '1';
+	server_database[3] = '3';
+	server_database[5] = '5';
+
+	// Printar arrays nao funciona muito bem sem isso,
+	//   nós não temos nenhuma proteção contra um cliente sobreescrever isso, 
+	//   e a gente ainda nao vai fazer nada a respeito disso.
+	server_database[SERVER_SIZE-1] = '\0'; 
+}
+
+void ler_server_procedure(int client_sockfd, char* server_database) {
+	char starting_position_arg[100] = "";
+	char size_arg[100] = "";
+	int starting_position, size;
+
+	read(client_sockfd, &starting_position_arg, 100);
+	printf("\n starting_position_arg: %s\n", starting_position_arg);
+	fflush(stdout);
+
+	read(client_sockfd, &size_arg, 100);
+	printf("\n size_arg: %s\n", size_arg);
+	fflush(stdout);
+
+	starting_position = atoi(starting_position_arg);
+	size = atoi(size_arg);
+
+	char output[SERVER_SIZE] = "";
+
+	for(int i=0; i < size; i++) {
+		printf("%d\n", i);
+		fflush(stdout);
+		output[i] = server_database[i+starting_position];
+		printf("%d\n\n", output[i]);
+		fflush(stdout);
+	}
+
+	printf("\n server_database: %s\n", server_database);
+	fflush(stdout);
+
+	printf("\n output: %s\n", output);
+	fflush(stdout);
+
+	write(client_sockfd, &output, SERVER_SIZE);
+}
+
 int main()
 {
     time_t clock;
 	char dataSending[MESSAGE_SIZE] = "";
 	int server_sockfd = 0;
 	int client_sockfd = 0;
-    char str[MESSAGE_SIZE] = "";
+    char command[MESSAGE_SIZE] = "";
 	char server_database[SERVER_SIZE];
 
-	/* Inicializar server_database */         
-	for (int i = 0; i < SERVER_SIZE; i++) {
-		server_database[i] = 'T';
-	}
-
-	// to be removed -- soh pra checar a leitura dps
-	server_database[1] = '1';
-	server_database[3] = '3';
-	server_database[5] = '5';
-
-
+	initialize_server_database(server_database);
 
 	/* Inicialização de sockets */         
 	struct sockaddr_in address;
@@ -48,59 +92,29 @@ int main()
 	client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
 	printf("\nCliente conectado\n");
 	fflush(stdout);
+
+	/* Operações pós conexão */         
 	while(1)
 	{
-		/* Operações pós conexão */         
+		printf("\nAguardando comando do cliente...\n");
+		fflush(stdout);
+        read(client_sockfd, &command, MESSAGE_SIZE);
 
-		// assumindo "ler" e "sair"
-		// 
-
-        read(client_sockfd, &str, MESSAGE_SIZE);
-		// printf("%s\n", str);
-		// printf("%d\n", strlen(str)+1);
-		printf("\nRecebemos: %s\n", str);
+		printf("\nRecebemos: %s\n", command);
 		fflush(stdout);
 
-		if(strcmp(str,"sair")==0){
+		if (strcmp(command, "escrever") == 0) {
+			// escrever_server_procedure();
+			printf("todo");
+		} else if (strcmp(command, "ler") == 0) {
+			ler_server_procedure(client_sockfd, server_database);
+		} else if (strcmp(command, "sair") == 0){
             break;
+		} else {
+			printf("\nComando nao reconhecido, aguardando novo comando.\n");
 		}
-
-		// [ ] - Le(Posicao4, tamanho)
-		char starting_position_arg[100] = "";
-		char size_arg[100] = "";
-		int starting_position, size;
-
-		read(client_sockfd, &starting_position_arg, 100);
-		printf("\n starting_position_arg: %s\n", starting_position_arg);
-		fflush(stdout);
-
-		read(client_sockfd, &size_arg, 100);
-		printf("\n size_arg: %s\n", size_arg);
-		fflush(stdout);
-
-		starting_position = atoi(starting_position_arg);
-        size = atoi(size_arg);
-
-		char output[SERVER_SIZE] = "";
-
-		for(int i=starting_position; i < (starting_position+size); i++) {
-			printf("%d\n", i);
-			fflush(stdout);
-			output[i-starting_position] = server_database[i];
-			printf("%d\n\n", output[i-starting_position]);
-			fflush(stdout);
-		}
-
-		printf("\n server_database: %s\n", server_database);
-		fflush(stdout);
-
-		printf("\n output: %s\n", output);
-		fflush(stdout);
-
-		write(client_sockfd, &output, SERVER_SIZE);
-        sleep(1);
-     }
- 	 close(client_sockfd);
+    }
+ 	close(client_sockfd);
  
-     return 0;
+    return 0;
 }
