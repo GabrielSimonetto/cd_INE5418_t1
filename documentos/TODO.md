@@ -10,10 +10,15 @@ Parte 1:
                 adicionar novas funcionalidades
                 e etc.
 
-[x] - Multiplos clientes
+[ ] - Multiplos clientes
     (fork ok? ou thread?)
     R: Threads vao facilitar a vida pra usar o mesmo ambiente de memoria
         para compartilhar mutexes/semaforos vai ser mais simples.
+
+    Inclusive, eu com certeza esqueci de esperar as threads que terminam.
+        (parece que onde coloca fork pra processo coloca pthread smth)
+        (e onde coloca wait pra processo tambem colocaria algo similar pra pthread)
+        (entao o raciocinio // codigo nao muda.)
 
 [ ] - Separar em 4 servidores
 
