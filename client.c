@@ -12,14 +12,38 @@
 #include "config.h"
 
 
+void ler_client_procedure(int sockfd) {
+    // send starting position
+    char starting_position[MESSAGE_SIZE] = "";
+    printf("starting position: \n");
+    fflush(stdout);
+    scanf("%s", starting_position);        
+    write(sockfd, &starting_position, MESSAGE_SIZE);
+
+    // send size
+    char size[MESSAGE_SIZE] = "";
+    printf("size: \n");
+    fflush(stdout);
+    scanf("%s", size);        
+    write(sockfd, &size, MESSAGE_SIZE);
+
+    // read resultado
+    char output[SERVER_SIZE] = "";
+    read(sockfd, &output, SERVER_SIZE);
+    printf("\n OUTPUT: %s\n", output);
+    fflush(stdout);
+}
+
+
 int main()
 {
     int sockfd = 0;
     int n = 0;
-    char dataReceived[MESSAGE_SIZE];
+    char dataReceived[MESSAGE_SIZE] = "";
     struct sockaddr_in address;
-    char str[MESSAGE_SIZE];
- 
+    char command[MESSAGE_SIZE] = "";
+    size_t initial_position_argument;
+    size_t length_argument;
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -36,19 +60,25 @@ int main()
         printf("Conexão falhou, confira se o server foi iniciado\n");
         return 1;
     }
- 
+
     while (1)
     {
-        printf("\nÓtimo! Agora me envie algo para ser ecoado\n");
+        printf("Entre com um dos comandos a seguir:\n \t\tescrever\n\t\tler\n\t\tsair\n");
         fflush(stdout);
-        scanf("%s", str);
-        if(strcmp(str,"sair")==0){
+        scanf("%s", command);
+        // send command to server
+		write(sockfd, &command, MESSAGE_SIZE);
+
+        if (strcmp(command, "escrever") == 0) {
+            // escrever_client_procedure();
+            printf("todo");
+        } else if (strcmp(command, "ler") == 0) {
+            ler_client_procedure(sockfd);
+        } else if (strcmp(command, "sair") == 0) {
             break;
+        } else {
+            printf("\nComando nao reconhecido, aguardando novo comando.\n");
         }
-        write(sockfd, &str, strlen(str)+1);
-        read(sockfd, &dataReceived, MESSAGE_SIZE);
-        printf("%s\n", dataReceived);
-		fflush(stdout);
     }
     
     if( n < 0)
