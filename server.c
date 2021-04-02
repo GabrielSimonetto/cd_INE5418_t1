@@ -122,15 +122,15 @@ int main() {
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = 9734;	
-	bind(server_sockfd, (struct sockaddr*)&address , sizeof(address));
-	listen(server_sockfd , 20);
+	bind(server_sockfd, (struct sockaddr*)&address, sizeof(address));
+	listen(server_sockfd, 20); // TODO: acertar esse parametro 20
  
 	while (1) {
 		/* Esperando clientes */         
 		printf("\nServer rodando, aguardando contato com cliente\n");
 		fflush(stdout);
 
-		client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
+		client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, 2);
 		printf("\nCliente conectado\n");
 		fflush(stdout);
 
@@ -140,7 +140,7 @@ int main() {
 		args->server_database = &server_database;
 
 		// TODO: ache um lugar para sua thread!
-		
+
 		//	circule a lista uma vez procurando qualquer lugar que tenha NULL
 		// 	caso nao ache... sei la, devolva uma mensagem mandando o usuario ir se foder
 		// 	caso ache, lembre de no final de tudo colocar NULL naquele slot tambem.
@@ -152,6 +152,8 @@ int main() {
 		// Ah! mas eu posso negar serviço no accept do servidor!
 		// eu soh tenho que ir la e definir a quantidade de clientes com
 		// a mesma quantidade de threads :DD
+
+		// indeed, era bem assim que eu ia resolver isso!
 
 		if(pthread_create(&primes[i], NULL, compute_prime, args)) {
             free(args);
