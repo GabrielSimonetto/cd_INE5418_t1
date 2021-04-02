@@ -1,2 +1,3 @@
 #define MESSAGE_SIZE 100
 #define SERVER_SIZE 1024
+#define NUM_THREADS 4

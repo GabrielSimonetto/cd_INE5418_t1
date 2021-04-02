@@ -8,9 +8,14 @@
 #include <arpa/inet.h> 
 #include <sys/socket.h> 
 #include <netinet/in.h> 
+#include <pthread.h>
 
 #include "config.h"
 
+typedef struct {
+	int *client_sockfd;
+	char *server_database;
+} thread_info;
 
 
 void initialize_server_database(char* server_database) {
@@ -66,14 +71,48 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	write(client_sockfd, &output, SERVER_SIZE);
 }
 
-int main()
-{
+// TODO: Make threaded function take packaged arguments via struct
+
+// void *compute_prime (void *args) {
+//     compute_prime_struct *actual_args = args;
+//     //...
+//     free(actual_args);
+//     return 0;
+// }
+
+void serve_connected_client(int client_sockfd, char* server_database) {
+    char command[MESSAGE_SIZE] = "";
+
+	while(1) {
+		printf("\nAguardando comando do cliente...\n");
+		fflush(stdout);
+		read(client_sockfd, &command, MESSAGE_SIZE);
+
+		printf("\nRecebemos: %s\n", command);
+		fflush(stdout);
+
+		if (strcmp(command, "escrever") == 0) {
+			// escrever_server_procedure();
+			printf("todo");
+		} else if (strcmp(command, "ler") == 0) {
+			ler_server_procedure(client_sockfd, server_database);
+		} else if (strcmp(command, "sair") == 0){
+			break;
+		} else {
+			printf("\nComando nao reconhecido, aguardando novo comando.\n");
+		}
+	}
+	close(client_sockfd);
+}
+
+
+int main() {
     time_t clock;
 	char dataSending[MESSAGE_SIZE] = "";
 	int server_sockfd = 0;
 	int client_sockfd = 0;
-    char command[MESSAGE_SIZE] = "";
 	char server_database[SERVER_SIZE];
+	pthread_t threads[NUM_THREADS] = { NULL };
 
 	initialize_server_database(server_database);
 
@@ -86,35 +125,43 @@ int main()
 	bind(server_sockfd, (struct sockaddr*)&address , sizeof(address));
 	listen(server_sockfd , 20);
  
-	/* Esperando um unico cliente uma unica vez */         
-	printf("\nServer rodando, aguardando contato com cliente\n");
-	fflush(stdout);
-	client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
-	printf("\nCliente conectado\n");
-	fflush(stdout);
-
-	/* Operações pós conexão */         
-	while(1)
-	{
-		printf("\nAguardando comando do cliente...\n");
-		fflush(stdout);
-        read(client_sockfd, &command, MESSAGE_SIZE);
-
-		printf("\nRecebemos: %s\n", command);
+	while (1) {
+		/* Esperando clientes */         
+		printf("\nServer rodando, aguardando contato com cliente\n");
 		fflush(stdout);
 
-		if (strcmp(command, "escrever") == 0) {
-			// escrever_server_procedure();
-			printf("todo");
-		} else if (strcmp(command, "ler") == 0) {
-			ler_server_procedure(client_sockfd, server_database);
-		} else if (strcmp(command, "sair") == 0){
-            break;
-		} else {
-			printf("\nComando nao reconhecido, aguardando novo comando.\n");
-		}
-    }
- 	close(client_sockfd);
+		client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
+		printf("\nCliente conectado\n");
+		fflush(stdout);
+
+		/* Construindo argumentos para thread */         
+		thread_info *args = malloc(sizeof *args);
+		args->client_sockfd = &client_sockfd;
+		args->server_database = &server_database;
+
+		// TODO: ache um lugar para sua thread!
+		
+		//	circule a lista uma vez procurando qualquer lugar que tenha NULL
+		// 	caso nao ache... sei la, devolva uma mensagem mandando o usuario ir se foder
+		// 	caso ache, lembre de no final de tudo colocar NULL naquele slot tambem.
+		//	isso no caso tem que ficar de responsabilidade da thread de alguma forma
+		// 	pq o server nao tem nem como trackear isso.
+		//  apesar de que eu podia negar acesso antes do accept tambem
+		//  e colocar aquele pthread_join que vai esperar um unico return...
+
+		// Ah! mas eu posso negar serviço no accept do servidor!
+		// eu soh tenho que ir la e definir a quantidade de clientes com
+		// a mesma quantidade de threads :DD
+
+		if(pthread_create(&primes[i], NULL, compute_prime, args)) {
+            free(args);
+			printf("Criação da thread falhou\n");
+        	return 1;
+        }
+
+		// /* Operações pós conexão */         
+		// serve_connected_client(client_sockfd, server_database);
+	}
  
     return 0;
 }
