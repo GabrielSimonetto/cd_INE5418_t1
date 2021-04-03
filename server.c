@@ -38,16 +38,43 @@ void initialize_server_database(char* server_database) {
 	server_database[SERVER_SIZE-1] = '\0'; 
 }
 
-void ler_server_procedure(int client_sockfd, char* server_database) {
-	char starting_position_arg[100] = "";
-	char size_arg[100] = "";
+void escrever_server_procedure(int client_sockfd, char* server_database){
+	char starting_position_arg[MESSAGE_SIZE];
+	char message[MESSAGE_SIZE];
+	char size_arg[MESSAGE_SIZE];
 	int starting_position, size;
-
-	read(client_sockfd, &starting_position_arg, 100);
+	
+	read(client_sockfd, &starting_position_arg, MESSAGE_SIZE);
 	printf("\n starting_position_arg: %s\n", starting_position_arg);
 	fflush(stdout);
 
-	read(client_sockfd, &size_arg, 100);
+	read(client_sockfd, &message, MESSAGE_SIZE);
+	printf("\n starting_position_arg: %s\n", message);
+	fflush(stdout);
+
+	read(client_sockfd, &size_arg, MESSAGE_SIZE);
+	printf("\n size_arg: %s\n", size_arg);
+	fflush(stdout);
+	
+	starting_position = atoi(starting_position_arg);
+	size = atoi(size_arg);
+
+	for(int i=0; i < size; i++) {
+		server_database[i+starting_position] = message[i];
+	}
+
+}
+
+void ler_server_procedure(int client_sockfd, char* server_database) {
+	char starting_position_arg[MESSAGE_SIZE] = "";
+	char size_arg[MESSAGE_SIZE] = "";
+	int starting_position, size;
+
+	read(client_sockfd, &starting_position_arg, MESSAGE_SIZE);
+	printf("\n starting_position_arg: %s\n", starting_position_arg);
+	fflush(stdout);
+
+	read(client_sockfd, &size_arg, MESSAGE_SIZE);
 	printf("\n size_arg: %s\n", size_arg);
 	fflush(stdout);
 
@@ -57,11 +84,7 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	char output[SERVER_SIZE] = "";
 
 	for(int i=0; i < size; i++) {
-		printf("%d\n", i);
-		fflush(stdout);
 		output[i] = server_database[i+starting_position];
-		printf("%d\n\n", output[i]);
-		fflush(stdout);
 	}
 
 	printf("\n server_database: %s\n", server_database);
@@ -92,17 +115,17 @@ void *serve_connected_client(void *args) {
 		fflush(stdout);
 
 		if (strcmp(command, "escrever") == 0) {
-			// escrever_server_procedure();
+			escrever_server_procedure(client_sockfd, server_database);
 			printf("todo");
 		} else if (strcmp(command, "ler") == 0) {
 			ler_server_procedure(client_sockfd, server_database);
 		} else if (strcmp(command, "sair") == 0){
-			break;
+            break;
 		} else {
 			printf("\nComando nao reconhecido, aguardando novo comando.\n");
 		}
-	}
-	close(client_sockfd);
+    }
+ 	close(client_sockfd);
 	return 0;
 }
 
