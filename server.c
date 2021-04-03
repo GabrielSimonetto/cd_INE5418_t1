@@ -31,6 +31,33 @@ void initialize_server_database(char* server_database) {
 	server_database[SERVER_SIZE-1] = '\0'; 
 }
 
+void escrever_server_procedure(int client_sockfd, char* server_database){
+	char starting_position_arg[100];
+	char message[100];
+	char size_arg[100];
+	int starting_position, size;
+	
+	read(client_sockfd, &starting_position_arg, 100);
+	printf("\n starting_position_arg: %s\n", starting_position_arg);
+	fflush(stdout);
+
+	read(client_sockfd, &message, 100);
+	printf("\n starting_position_arg: %s\n", message);
+	fflush(stdout);
+
+	read(client_sockfd, &size_arg, 100);
+	printf("\n size_arg: %s\n", size_arg);
+	fflush(stdout);
+	
+	starting_position = atoi(starting_position_arg);
+	size = atoi(size_arg);
+
+	for(int i=0; i < size; i++) {
+		server_database[i+starting_position] = message[i];
+	}
+
+}
+
 void ler_server_procedure(int client_sockfd, char* server_database) {
 	char starting_position_arg[100] = "";
 	char size_arg[100] = "";
@@ -104,7 +131,7 @@ int main()
 		fflush(stdout);
 
 		if (strcmp(command, "escrever") == 0) {
-			// escrever_server_procedure();
+			escrever_server_procedure(client_sockfd, server_database);
 			printf("todo");
 		} else if (strcmp(command, "ler") == 0) {
 			ler_server_procedure(client_sockfd, server_database);
