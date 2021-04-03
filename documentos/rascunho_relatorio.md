@@ -2,9 +2,20 @@
 
 ( Se a gente lembrar de ir preenchendo isso conforme pensa nas coisas a vida vai ser mais facil depois )
 
+
 ## Defender o TCP
 
 < TODO >
+
+# Numero de clientes possiveis
+
+Ao criar as threads que servirão os diferentes clientes que se conectem, precisamos de uma lista para armazenar os endereços de todas as threads em atividade. Nesse ponto, podemos tomar a decisão de criar uma lista que cresce de forma dinâmica ou de uma lista de tamanho fixo. Num cenário real, existe a possibilidade de a decisão correta ser usar uma lista que cresce dinamicamente ao mesmo tempo que se monitora a rede para identificar se os recursos estao se tornando escassos para possivelmente reduzir a quantidade de clientes e começar a negar acesso a novos clientes. Um cenário que vem em mente, é se por exemplo cada cliente unico ocupa pouca memoria, dessa forma, não sendo um problema, ao mesmo tempo que cada cliente unico faz poucas requisições por vez.
+
+É claro que mesmo nesse cenário existem muitas variáveis envolvidas, e provavelmente voce consegue prever quanto poder processamento um numero X de usuários irá exigir. Bom, feitas essas considerações, como nós não vamos implementar nenhum meio complexo de tratamento dinamico, vamos optar pela simplicidade de um numero definido de clientes possiveis por vez.
+
+    // TODO: ta, mas ai eu teno que checar quais espaços dessa lista estao ocupados e quais nao?
+                EHRMAGHERDS
+
 
 ## Dispachante ou Relacionamento MxN entre clientes e servidores?
 
@@ -23,3 +34,15 @@ e garantir que estas estejam sempre atualizadas, entretanto o ganho de performan
 
 Pode ser sempre o logger relacionado ao server 0, nao vejo porque alg mais complicado.
 
+## Threads:
+
+Um tempo absurdo foi perdido tentando fazer threads funcionarem, muitos loops infinitos foram enfrentados, em especifico, read e write nao esperavam por dados e simplesmente ficavam rodando, e portanto eu agora estou trocando pra recv e... pro outro la, vou catar agora, e, com alguma sorte, isso vai funcionar (>:
+
+recv é analogo ao read, send é analogo ao write
+pronto, eh o send entao.
+
+Posteriormente pensamos que seria uma boa ter usado as threads em modo detached, ja que caso o main fosse interrompido novas conexões nao poderiam mais ser criadas, mas as que ja existissem poderiam rodar até o final.
+
+## Interrompendo o server:
+
+Nao foi encontrada uma forma elegante de interromper o serviço no server, e finalizar o serviço nos clientes.

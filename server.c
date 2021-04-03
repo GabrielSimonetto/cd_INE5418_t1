@@ -1,5 +1,6 @@
 #include <stdio.h> 
 #include <stdlib.h> 
+#include <stdbool.h>
 #include <string.h> 
 #include <errno.h> 
 #include <time.h> 
@@ -8,9 +9,15 @@
 #include <arpa/inet.h> 
 #include <sys/socket.h> 
 #include <netinet/in.h> 
+#include <pthread.h>
 
 #include "config.h"
 
+typedef struct thread_info_t {
+	int client_sockfd;
+	struct sockaddr_in client_address;
+	char *server_database;
+} thread_info_t;
 
 
 void initialize_server_database(char* server_database) {
@@ -32,20 +39,20 @@ void initialize_server_database(char* server_database) {
 }
 
 void escrever_server_procedure(int client_sockfd, char* server_database){
-	char starting_position_arg[100];
-	char message[100];
-	char size_arg[100];
+	char starting_position_arg[MESSAGE_SIZE];
+	char message[MESSAGE_SIZE];
+	char size_arg[MESSAGE_SIZE];
 	int starting_position, size;
 	
-	read(client_sockfd, &starting_position_arg, 100);
+	read(client_sockfd, &starting_position_arg, MESSAGE_SIZE);
 	printf("\n starting_position_arg: %s\n", starting_position_arg);
 	fflush(stdout);
 
-	read(client_sockfd, &message, 100);
+	read(client_sockfd, &message, MESSAGE_SIZE);
 	printf("\n starting_position_arg: %s\n", message);
 	fflush(stdout);
 
-	read(client_sockfd, &size_arg, 100);
+	read(client_sockfd, &size_arg, MESSAGE_SIZE);
 	printf("\n size_arg: %s\n", size_arg);
 	fflush(stdout);
 	
@@ -59,15 +66,15 @@ void escrever_server_procedure(int client_sockfd, char* server_database){
 }
 
 void ler_server_procedure(int client_sockfd, char* server_database) {
-	char starting_position_arg[100] = "";
-	char size_arg[100] = "";
+	char starting_position_arg[MESSAGE_SIZE] = "";
+	char size_arg[MESSAGE_SIZE] = "";
 	int starting_position, size;
 
-	read(client_sockfd, &starting_position_arg, 100);
+	read(client_sockfd, &starting_position_arg, MESSAGE_SIZE);
 	printf("\n starting_position_arg: %s\n", starting_position_arg);
 	fflush(stdout);
 
-	read(client_sockfd, &size_arg, 100);
+	read(client_sockfd, &size_arg, MESSAGE_SIZE);
 	printf("\n size_arg: %s\n", size_arg);
 	fflush(stdout);
 
@@ -77,11 +84,7 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	char output[SERVER_SIZE] = "";
 
 	for(int i=0; i < size; i++) {
-		printf("%d\n", i);
-		fflush(stdout);
 		output[i] = server_database[i+starting_position];
-		printf("%d\n\n", output[i]);
-		fflush(stdout);
 	}
 
 	printf("\n server_database: %s\n", server_database);
@@ -93,39 +96,20 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	write(client_sockfd, &output, SERVER_SIZE);
 }
 
-int main()
-{
-    time_t clock;
-	char dataSending[MESSAGE_SIZE] = "";
-	int server_sockfd = 0;
-	int client_sockfd = 0;
-    char command[MESSAGE_SIZE] = "";
-	char server_database[SERVER_SIZE];
 
-	initialize_server_database(server_database);
+void *serve_connected_client(void *args) {
+	thread_info_t *actual_args = args;
+	int client_sockfd = actual_args->client_sockfd;
+	char* server_database = actual_args->server_database;
+	free(actual_args);
 
-	/* Inicialização de sockets */         
-	struct sockaddr_in address;
-	server_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = 9734;	
-	bind(server_sockfd, (struct sockaddr*)&address , sizeof(address));
-	listen(server_sockfd , 20);
- 
-	/* Esperando um unico cliente uma unica vez */         
-	printf("\nServer rodando, aguardando contato com cliente\n");
-	fflush(stdout);
-	client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
-	printf("\nCliente conectado\n");
-	fflush(stdout);
+    char command[MESSAGE_SIZE];
 
-	/* Operações pós conexão */         
-	while(1)
-	{
+	while(1) {
 		printf("\nAguardando comando do cliente...\n");
 		fflush(stdout);
-        read(client_sockfd, &command, MESSAGE_SIZE);
+
+		int bytes_read = read(client_sockfd, &command, MESSAGE_SIZE);
 
 		printf("\nRecebemos: %s\n", command);
 		fflush(stdout);
@@ -142,6 +126,61 @@ int main()
 		}
     }
  	close(client_sockfd);
+	return 0;
+}
+
+
+int main() {
+    time_t clock;
+	char dataSending[MESSAGE_SIZE] = "";
+	int server_sockfd = 0;
+	int client_sockfd = 0;
+	char server_database[SERVER_SIZE];
+
+	thread_info_t *args;
+	socklen_t client_address_len;
+
+	initialize_server_database(server_database);
+
+	/* Inicialização de sockets */         
+	struct sockaddr_in address;
+	server_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = 9734;	
+	bind(server_sockfd, (struct sockaddr*)&address, sizeof(address));
+	listen(server_sockfd, 20);
+
+
+	while (1) {
+		/* Esperando clientes */         
+		printf("\nServer rodando, aguardando contato com cliente\n");
+		fflush(stdout);
+
+		args = (thread_info_t *)malloc(sizeof *args);
+		if (!args) {
+            perror("malloc");
+            continue;
+        }
+
+		/* Gerenciando conexão */         
+		client_address_len = sizeof args->client_address;
+		client_sockfd = accept(server_sockfd, (struct sockaddr*)&args->client_address, &client_address_len);
+		printf("\nCliente conectado\n");
+		fflush(stdout);
+
+		/* Construindo argumentos para thread */         
+		args->client_sockfd = client_sockfd;
+		args->server_database = &server_database[0];
+		pthread_t t;
+
+		/* Operações pós conexão */ 
+		if(pthread_create(&t, NULL, serve_connected_client, args)) {
+            free(args);
+			printf("Criação da thread falhou\n");
+        	return 1;
+        }
+	}
  
     return 0;
 }

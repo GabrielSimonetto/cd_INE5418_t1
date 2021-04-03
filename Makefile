@@ -1,5 +1,7 @@
 .PHONY: all
-all: server client
+all:
+	gcc -pthread -o server server.c
+	gcc -o client client.c
 
 .PHONY: rebuild
 rebuild: clean all
