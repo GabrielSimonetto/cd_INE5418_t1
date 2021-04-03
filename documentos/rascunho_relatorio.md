@@ -41,6 +41,8 @@ Um tempo absurdo foi perdido tentando fazer threads funcionarem, muitos loops in
 recv é analogo ao read, send é analogo ao write
 pronto, eh o send entao.
 
+Posteriormente pensamos que seria uma boa ter usado as threads em modo detached, ja que caso o main fosse interrompido novas conexões nao poderiam mais ser criadas, mas as que ja existissem poderiam rodar até o final.
+
 ## Interrompendo o server:
 
 Nao foi encontrada uma forma elegante de interromper o serviço no server, e finalizar o serviço nos clientes.
