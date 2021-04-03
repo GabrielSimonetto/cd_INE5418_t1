@@ -11,6 +11,29 @@
 
 #include "config.h"
 
+void escrever_client_procedure(int sockfd) {
+    // send starting position
+    char starting_position[MESSAGE_SIZE] = "";
+    printf("starting position: \n");
+    fflush(stdout);
+    scanf("%s", starting_position);        
+    write(sockfd, &starting_position, MESSAGE_SIZE);
+
+    // send message
+    char message[MESSAGE_SIZE] = "";
+	printf("message: \n");
+	fflush(stdout);
+    scanf("%s", message);        
+    write(sockfd, &message, MESSAGE_SIZE);
+
+    // send size
+    char size[MESSAGE_SIZE] = "";
+    printf("size: \n");
+    fflush(stdout);
+    scanf("%s", size);        
+    write(sockfd, &size, MESSAGE_SIZE);
+}
+
 
 void ler_client_procedure(int sockfd) {
     // send starting position
@@ -70,8 +93,7 @@ int main()
 		write(sockfd, &command, MESSAGE_SIZE);
 
         if (strcmp(command, "escrever") == 0) {
-            // escrever_client_procedure();
-            printf("todo");
+            escrever_client_procedure(sockfd);
         } else if (strcmp(command, "ler") == 0) {
             ler_client_procedure(sockfd);
         } else if (strcmp(command, "sair") == 0) {
