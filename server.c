@@ -1,5 +1,6 @@
 #include <stdio.h> 
 #include <stdlib.h> 
+#include <stdbool.h>
 #include <string.h> 
 #include <errno.h> 
 #include <time.h> 
@@ -12,10 +13,11 @@
 
 #include "config.h"
 
-typedef struct {
-	int *client_sockfd;
+typedef struct thread_info_t {
+	int client_sockfd;
+	struct sockaddr_in client_address;
 	char *server_database;
-} thread_info;
+} thread_info_t;
 
 
 void initialize_server_database(char* server_database) {
@@ -71,22 +73,20 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	write(client_sockfd, &output, SERVER_SIZE);
 }
 
-// TODO: Make threaded function take packaged arguments via struct
 
-// void *compute_prime (void *args) {
-//     compute_prime_struct *actual_args = args;
-//     //...
-//     free(actual_args);
-//     return 0;
-// }
+void *serve_connected_client(void *args) {
+	thread_info_t *actual_args = args;
+	int client_sockfd = actual_args->client_sockfd;
+	char* server_database = actual_args->server_database;
+	free(actual_args);
 
-void serve_connected_client(int client_sockfd, char* server_database) {
-    char command[MESSAGE_SIZE] = "";
+    char command[MESSAGE_SIZE];
 
 	while(1) {
 		printf("\nAguardando comando do cliente...\n");
 		fflush(stdout);
-		read(client_sockfd, &command, MESSAGE_SIZE);
+
+		int bytes_read = read(client_sockfd, &command, MESSAGE_SIZE);
 
 		printf("\nRecebemos: %s\n", command);
 		fflush(stdout);
@@ -103,6 +103,7 @@ void serve_connected_client(int client_sockfd, char* server_database) {
 		}
 	}
 	close(client_sockfd);
+	return 0;
 }
 
 
@@ -112,7 +113,9 @@ int main() {
 	int server_sockfd = 0;
 	int client_sockfd = 0;
 	char server_database[SERVER_SIZE];
-	pthread_t threads[NUM_THREADS] = { NULL };
+
+	thread_info_t *args;
+	socklen_t client_address_len;
 
 	initialize_server_database(server_database);
 
@@ -123,46 +126,37 @@ int main() {
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = 9734;	
 	bind(server_sockfd, (struct sockaddr*)&address, sizeof(address));
-	listen(server_sockfd, 20); // TODO: acertar esse parametro 20
- 
+	listen(server_sockfd, 20);
+
+
 	while (1) {
 		/* Esperando clientes */         
 		printf("\nServer rodando, aguardando contato com cliente\n");
 		fflush(stdout);
 
-		client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, 2);
+		args = (thread_info_t *)malloc(sizeof *args);
+		if (!args) {
+            perror("malloc");
+            continue;
+        }
+
+		/* Gerenciando conexão */         
+		client_address_len = sizeof args->client_address;
+		client_sockfd = accept(server_sockfd, (struct sockaddr*)&args->client_address, &client_address_len);
 		printf("\nCliente conectado\n");
 		fflush(stdout);
 
 		/* Construindo argumentos para thread */         
-		thread_info *args = malloc(sizeof *args);
-		args->client_sockfd = &client_sockfd;
-		args->server_database = &server_database;
+		args->client_sockfd = client_sockfd;
+		args->server_database = &server_database[0];
+		pthread_t t;
 
-		// TODO: ache um lugar para sua thread!
-
-		//	circule a lista uma vez procurando qualquer lugar que tenha NULL
-		// 	caso nao ache... sei la, devolva uma mensagem mandando o usuario ir se foder
-		// 	caso ache, lembre de no final de tudo colocar NULL naquele slot tambem.
-		//	isso no caso tem que ficar de responsabilidade da thread de alguma forma
-		// 	pq o server nao tem nem como trackear isso.
-		//  apesar de que eu podia negar acesso antes do accept tambem
-		//  e colocar aquele pthread_join que vai esperar um unico return...
-
-		// Ah! mas eu posso negar serviço no accept do servidor!
-		// eu soh tenho que ir la e definir a quantidade de clientes com
-		// a mesma quantidade de threads :DD
-
-		// indeed, era bem assim que eu ia resolver isso!
-
-		if(pthread_create(&primes[i], NULL, compute_prime, args)) {
+		/* Operações pós conexão */ 
+		if(pthread_create(&t, NULL, serve_connected_client, args)) {
             free(args);
 			printf("Criação da thread falhou\n");
         	return 1;
         }
-
-		// /* Operações pós conexão */         
-		// serve_connected_client(client_sockfd, server_database);
 	}
  
     return 0;

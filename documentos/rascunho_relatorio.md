@@ -34,3 +34,13 @@ e garantir que estas estejam sempre atualizadas, entretanto o ganho de performan
 
 Pode ser sempre o logger relacionado ao server 0, nao vejo porque alg mais complicado.
 
+## Threads:
+
+Um tempo absurdo foi perdido tentando fazer threads funcionarem, muitos loops infinitos foram enfrentados, em especifico, read e write nao esperavam por dados e simplesmente ficavam rodando, e portanto eu agora estou trocando pra recv e... pro outro la, vou catar agora, e, com alguma sorte, isso vai funcionar (>:
+
+recv é analogo ao read, send é analogo ao write
+pronto, eh o send entao.
+
+## Interrompendo o server:
+
+Nao foi encontrada uma forma elegante de interromper o serviço no server, e finalizar o serviço nos clientes.
