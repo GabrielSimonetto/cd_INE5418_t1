@@ -16,7 +16,7 @@
 void initialize_server_database(char* server_database) {
 
 	// Inicializar com um caractere facil de ver      
-	for (int i = 0; i < SERVER_SIZE; i++) {
+	for (int i = 0; i < SERVER_SIZE_TOTAL; i++) {
 		server_database[i] = 'T';
 	}
 
@@ -28,7 +28,7 @@ void initialize_server_database(char* server_database) {
 	// Printar arrays nao funciona muito bem sem isso,
 	//   nós não temos nenhuma proteção contra um cliente sobreescrever isso, 
 	//   e a gente ainda nao vai fazer nada a respeito disso.
-	server_database[SERVER_SIZE-1] = '\0'; 
+	server_database[SERVER_SIZE_TOTAL-1] = '\0'; 
 }
 
 void escrever_server_procedure(int client_sockfd, char* server_database){
@@ -74,7 +74,7 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	starting_position = atoi(starting_position_arg);
 	size = atoi(size_arg);
 
-	char output[SERVER_SIZE] = "";
+	char output[SERVER_SIZE_TOTAL] = "";
 
 	for(int i=0; i < size; i++) {
 		printf("%d\n", i);
@@ -90,17 +90,16 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	printf("\n output: %s\n", output);
 	fflush(stdout);
 
-	write(client_sockfd, &output, SERVER_SIZE);
+	write(client_sockfd, &output, SERVER_SIZE_TOTAL);
 }
 
 int main()
 {
-    time_t clock;
 	char dataSending[MESSAGE_SIZE] = "";
 	int server_sockfd = 0;
 	int client_sockfd = 0;
     char command[MESSAGE_SIZE] = "";
-	char server_database[SERVER_SIZE];
+	char server_database[SERVER_SIZE_TOTAL];
 
 	initialize_server_database(server_database);
 

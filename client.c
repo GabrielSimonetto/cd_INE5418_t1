@@ -51,8 +51,8 @@ void ler_client_procedure(int sockfd) {
     write(sockfd, &size, MESSAGE_SIZE);
 
     // read resultado
-    char output[SERVER_SIZE] = "";
-    read(sockfd, &output, SERVER_SIZE);
+    char output[SERVER_SIZE_TOTAL] = "";
+    read(sockfd, &output, SERVER_SIZE_TOTAL);
     printf("\n OUTPUT: %s\n", output);
     fflush(stdout);
 }
