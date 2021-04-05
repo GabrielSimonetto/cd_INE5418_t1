@@ -9,7 +9,6 @@
 #include <arpa/inet.h> 
 #include <sys/socket.h> 
 #include <netinet/in.h> 
-#include <sys/un.h>
 
 #include "config.h"
 
@@ -30,6 +29,7 @@ void escrever_dispatcher_to_server_procedure(int server_sockfd, char* starting_p
     // send size
     write(server_sockfd, &size, MESSAGE_SIZE);
 }
+
 
 void ler_dispatcher_to_server_procedure(int server_sockfd, char* starting_position, char* size, char* partial_server_output, char* command) {
     // send command
@@ -123,29 +123,10 @@ int main()
 	int client_sockfd = 0;
 	int dispatcher_sockfd = 0;
 	// TODO: Atualizar lista de servers depois
-	int servers_sockfd = 0;
+	int server_sockfd = 0;
     char command[MESSAGE_SIZE] = "";
 
-	/* Inicialização de sockets server */         
-	struct sockaddr_un dispatcher_address; 
-	struct sockaddr_un servers_address;
-	dispatcher_sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-	dispatcher_address.sun_family = AF_UNIX;
-	strcpy(dispatcher_address.sun_path, "server_socket");
-	bind(dispatcher_sockfd, (struct sockaddr *) &dispatcher_address, sizeof(dispatcher_address));
-	listen(dispatcher_sockfd, 5);
-
-	/* Esperando um unico SERVER uma unica vez */         
-	printf("\nDispatcher rodando, aguardando conexões de servers\n");
-	fflush(stdout);
-	int servers_len = sizeof(servers_address);
-	servers_sockfd = accept(dispatcher_sockfd, (struct sockaddr *)&servers_address, &servers_len);
-	char hello = "h";
-	write(servers_sockfd, &hello, 1);
-	printf("\nServidores conectados\n");
-	fflush(stdout);
-
-	/* Inicialização de sockets clientes */         
+	/* Inicialização de sockets */         
 	struct sockaddr_in address;
 	dispatcher_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 	address.sin_family = AF_INET;
@@ -154,13 +135,19 @@ int main()
 	bind(dispatcher_sockfd, (struct sockaddr*)&address , sizeof(address));
 	listen(dispatcher_sockfd , 20);
 
+	/* Esperando um unico SERVER uma unica vez */         
+	printf("\nDispatcher rodando, aguardando conexões de servers\n");
+	fflush(stdout);
+	server_sockfd = accept(dispatcher_sockfd, (struct sockaddr*)NULL, NULL);
+	printf("\nServidores conectados\n");
+	fflush(stdout);
+
 	/* Esperando um unico cliente uma unica vez */         
 	printf("\nDispatcher rodando, aguardando contato com cliente\n");
 	fflush(stdout);
 	client_sockfd = accept(dispatcher_sockfd, (struct sockaddr*)NULL, NULL);
 	printf("\nCliente conectado\n");
 	fflush(stdout);
-
 
 	/* Operações pós conexão */         
 	while(1)
@@ -174,10 +161,10 @@ int main()
 
 		if (strcmp(command, "escrever") == 0) {
 			// TODO: Atualizar lista de servers depois
-			escrever_client_to_dispatcher_procedure(client_sockfd, servers_sockfd, command);
+			escrever_client_to_dispatcher_procedure(client_sockfd, server_sockfd, command);
 		} else if (strcmp(command, "ler") == 0) {
 			// TODO: Atualizar lista de servers depois
-			ler_client_to_dispatcher_procedure(client_sockfd, servers_sockfd, command);
+			ler_client_to_dispatcher_procedure(client_sockfd, server_sockfd, command);
 		} else if (strcmp(command, "sair") == 0){
             break;
 		} else {
