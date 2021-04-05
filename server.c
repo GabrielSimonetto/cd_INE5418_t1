@@ -16,7 +16,7 @@
 void initialize_server_database(char* server_database) {
 
 	// Inicializar com um caractere facil de ver      
-	for (int i = 0; i < SERVER_SIZE_TOTAL; i++) {
+	for (int i = 0; i < SERVER_SIZE_PER_PARTITION; i++) {
 		server_database[i] = 'T';
 	}
 
@@ -28,24 +28,24 @@ void initialize_server_database(char* server_database) {
 	// Printar arrays nao funciona muito bem sem isso,
 	//   nós não temos nenhuma proteção contra um cliente sobreescrever isso, 
 	//   e a gente ainda nao vai fazer nada a respeito disso.
-	server_database[SERVER_SIZE_TOTAL-1] = '\0'; 
+	server_database[SERVER_SIZE_PER_PARTITION-1] = '\0'; 
 }
 
 void escrever_server_procedure(int client_sockfd, char* server_database){
-	char starting_position_arg[100];
-	char message[100];
-	char size_arg[100];
+	char starting_position_arg[MESSAGE_SIZE];
+	char message[MESSAGE_SIZE];
+	char size_arg[MESSAGE_SIZE];
 	int starting_position, size;
 	
-	read(client_sockfd, &starting_position_arg, 100);
+	read(client_sockfd, &starting_position_arg, MESSAGE_SIZE);
 	printf("\n starting_position_arg: %s\n", starting_position_arg);
 	fflush(stdout);
 
-	read(client_sockfd, &message, 100);
+	read(client_sockfd, &message, MESSAGE_SIZE);
 	printf("\n starting_position_arg: %s\n", message);
 	fflush(stdout);
 
-	read(client_sockfd, &size_arg, 100);
+	read(client_sockfd, &size_arg, MESSAGE_SIZE);
 	printf("\n size_arg: %s\n", size_arg);
 	fflush(stdout);
 	
@@ -55,33 +55,28 @@ void escrever_server_procedure(int client_sockfd, char* server_database){
 	for(int i=0; i < size; i++) {
 		server_database[i+starting_position] = message[i];
 	}
-
 }
 
 void ler_server_procedure(int client_sockfd, char* server_database) {
-	char starting_position_arg[100] = "";
-	char size_arg[100] = "";
+	char starting_position_arg[MESSAGE_SIZE] = "";
+	char size_arg[MESSAGE_SIZE] = "";
 	int starting_position, size;
 
-	read(client_sockfd, &starting_position_arg, 100);
+	read(client_sockfd, &starting_position_arg, MESSAGE_SIZE);
 	printf("\n starting_position_arg: %s\n", starting_position_arg);
 	fflush(stdout);
 
-	read(client_sockfd, &size_arg, 100);
+	read(client_sockfd, &size_arg, MESSAGE_SIZE);
 	printf("\n size_arg: %s\n", size_arg);
 	fflush(stdout);
 
 	starting_position = atoi(starting_position_arg);
 	size = atoi(size_arg);
 
-	char output[SERVER_SIZE_TOTAL] = "";
+	char output[SERVER_SIZE_PER_PARTITION] = "";
 
 	for(int i=0; i < size; i++) {
-		printf("%d\n", i);
-		fflush(stdout);
 		output[i] = server_database[i+starting_position];
-		printf("%d\n\n", output[i]);
-		fflush(stdout);
 	}
 
 	printf("\n server_database: %s\n", server_database);
@@ -90,33 +85,35 @@ void ler_server_procedure(int client_sockfd, char* server_database) {
 	printf("\n output: %s\n", output);
 	fflush(stdout);
 
-	write(client_sockfd, &output, SERVER_SIZE_TOTAL);
+	write(client_sockfd, &output, SERVER_SIZE_PER_PARTITION);
 }
 
 int main()
 {
-	char dataSending[MESSAGE_SIZE] = "";
-	int server_sockfd = 0;
-	int client_sockfd = 0;
     char command[MESSAGE_SIZE] = "";
-	char server_database[SERVER_SIZE_TOTAL];
+	char server_database[SERVER_SIZE_PER_PARTITION];
 
 	initialize_server_database(server_database);
 
-	/* Inicialização de sockets */         
+	/* Tentando se conectar com o dispatcher*/         
+	int dispatcher_fd = 0;
 	struct sockaddr_in address;
-	server_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = 9734;	
-	bind(server_sockfd, (struct sockaddr*)&address , sizeof(address));
-	listen(server_sockfd , 20);
- 
-	/* Esperando um unico cliente uma unica vez */         
-	printf("\nServer rodando, aguardando contato com cliente\n");
-	fflush(stdout);
-	client_sockfd = accept(server_sockfd, (struct sockaddr*)NULL, NULL);
-	printf("\nCliente conectado\n");
+
+	if ((dispatcher_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("O socket nao pode ser criado \n");
+        return 1;
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_port = 9734;
+    address.sin_addr.s_addr = inet_addr("127.0.0.1");
+	if (connect(dispatcher_fd, (struct sockaddr *)&address, sizeof(address))<0)
+    {
+        printf("Conexão falhou, confira se o dispatcher foi iniciado\n");
+        return 1;
+    }
+	printf("\nDispatcher conectado number: %d\n", dispatcher_fd);
 	fflush(stdout);
 
 	/* Operações pós conexão */         
@@ -124,23 +121,21 @@ int main()
 	{
 		printf("\nAguardando comando do cliente...\n");
 		fflush(stdout);
-        read(client_sockfd, &command, MESSAGE_SIZE);
+		printf("\nCommand before reading from dispatcher: %s\n", command);
+		fflush(stdout);
+        read(dispatcher_fd, &command, MESSAGE_SIZE);
 
-		printf("\nRecebemos: %s\n", command);
+		printf("\nCommand AFTER reading from dispatcher: %s\n", command);
 		fflush(stdout);
 
 		if (strcmp(command, "escrever") == 0) {
-			escrever_server_procedure(client_sockfd, server_database);
-			printf("todo");
+			escrever_server_procedure(dispatcher_fd, server_database);
 		} else if (strcmp(command, "ler") == 0) {
-			ler_server_procedure(client_sockfd, server_database);
-		} else if (strcmp(command, "sair") == 0){
-            break;
+			ler_server_procedure(dispatcher_fd, server_database);
 		} else {
 			printf("\nComando nao reconhecido, aguardando novo comando.\n");
 		}
     }
- 	close(client_sockfd);
  
     return 0;
 }

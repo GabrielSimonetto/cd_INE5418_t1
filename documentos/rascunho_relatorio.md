@@ -69,3 +69,32 @@ caso necessario (ainda pensando se vou fazer requisição serial concatenando ou
 
 (Usar esse parágrafo se formos usar só uma porta) Estamos usando somente uma porta tambem, o que poderia vir a ser uma decisão
 ruim para performance, isso poderia ser refatorado caso necessário.
+
+
+### Checagem de Argumentos
+
+A qualquer momento o server pode cair se um cliente pedir pra escrever num endereço que nao existe no server. Seria bom ter checagens de parametros passados pelo cliente.
+
+
+### Bugs !!!
+
+1- Por alguma razao o servidor nao recebe o comando corretamente apos repassarmos para o dispatcher:
+
+> inserir erro <
+
+--- looping command with "escrever"
+"""
+    [bigode@coala cd_INE5418_t1]$ ./server 
+
+    Dispatcher conectado number: 3
+
+    Aguardando comando do cliente...
+
+    Command before reading from dispatcher: 
+
+    Command AFTER reading from dispatcher: @H��
+
+    Comando nao reconhecido, aguardando novo comando.
+
+    Aguardando comando do cliente...
+"""
