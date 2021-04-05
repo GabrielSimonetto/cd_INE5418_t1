@@ -8,6 +8,7 @@
 #include <arpa/inet.h> 
 #include <sys/socket.h> 
 #include <netinet/in.h> 
+#include <sys/un.h>
 
 #include "config.h"
 
@@ -97,23 +98,25 @@ int main()
 
 	/* Tentando se conectar com o dispatcher*/         
 	int dispatcher_fd = 0;
-	struct sockaddr_in address;
+	struct sockaddr_un address;
 
-	if ((dispatcher_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((dispatcher_fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
         printf("O socket nao pode ser criado \n");
         return 1;
     }
 
-    address.sin_family = AF_INET;
-    address.sin_port = 9734;
-    address.sin_addr.s_addr = inet_addr("127.0.0.1");
+    address.sun_family = AF_UNIX;
+	strcpy(address.sun_path, "server_socket");
 	if (connect(dispatcher_fd, (struct sockaddr *)&address, sizeof(address))<0)
     {
         printf("Conexão falhou, confira se o dispatcher foi iniciado\n");
         return 1;
     }
 	printf("\nDispatcher conectado number: %d\n", dispatcher_fd);
+	char hello = "";
+	read(dispatcher_fd, &hello, 1);
+	printf("\nRecebido a mensagem: %c\n", hello);
 	fflush(stdout);
 
 	/* Operações pós conexão */         

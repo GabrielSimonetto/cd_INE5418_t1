@@ -9,4 +9,4 @@ rebuild: clean all
 
 .PHONY: clean
 clean:
-	rm -f dispatcher server client
+	rm -f dispatcher server client server_socket
