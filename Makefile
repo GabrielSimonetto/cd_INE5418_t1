@@ -1,9 +1,12 @@
 .PHONY: all
-all: server client
+all: 
+	gcc dispatcher.c -o dispatcher -Wall
+	gcc server.c -o server -Wall
+	gcc client.c -o client -Wall
 
 .PHONY: rebuild
 rebuild: clean all
 
 .PHONY: clean
 clean:
-	rm -f server client
+	rm -f dispatcher server client

@@ -51,8 +51,8 @@ void ler_client_procedure(int sockfd) {
     write(sockfd, &size, MESSAGE_SIZE);
 
     // read resultado
-    char output[SERVER_SIZE] = "";
-    read(sockfd, &output, SERVER_SIZE);
+    char output[SERVER_SIZE_TOTAL] = "";
+    read(sockfd, &output, SERVER_SIZE_TOTAL);
     printf("\n OUTPUT: %s\n", output);
     fflush(stdout);
 }
@@ -62,11 +62,7 @@ int main()
 {
     int sockfd = 0;
     int n = 0;
-    char dataReceived[MESSAGE_SIZE] = "";
-    struct sockaddr_in address;
     char command[MESSAGE_SIZE] = "";
-    size_t initial_position_argument;
-    size_t length_argument;
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -74,6 +70,7 @@ int main()
         return 1;
     }
  
+    struct sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_port = 9734;
     address.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -103,7 +100,7 @@ int main()
         }
     }
     
-    if( n < 0)
+    if(n < 0)
     {
         printf("Erro \n");
     }
