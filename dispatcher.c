@@ -9,14 +9,22 @@
 #include <arpa/inet.h> 
 #include <sys/socket.h> 
 #include <netinet/in.h> 
+#include <pthread.h>
 
 #include "config.h"
+
+
+typedef struct thread_info_t {
+	int client_sockfd;
+	int server_sockfd;
+	struct sockaddr_in client_address;
+} thread_info_t;
 
 ///////////////// DISPATCHER AS ClIENT TO SERVER /////////////////
 
 void escrever_dispatcher_to_server_procedure(int server_sockfd, char* starting_position, char* message, char* size, char* command) {
-	// TODO: Atualizar lista de servers depois
 
+	// TODO: Atualizar lista de servers depois
     // send command
     write(server_sockfd, &command, MESSAGE_SIZE);
 
@@ -118,6 +126,41 @@ void ler_client_to_dispatcher_procedure(int client_sockfd, int server_sockfd, ch
 	write(client_sockfd, &output, SERVER_SIZE_PER_PARTITION);
 }
 
+void *serve_connected_client(void *args) {
+	thread_info_t *actual_args = args;
+	int client_sockfd = actual_args->client_sockfd;
+	int server_sockfd = actual_args->server_sockfd;
+	free(actual_args);
+
+    char command[MESSAGE_SIZE];
+
+	/* Operações pós conexão */         
+	while(1)
+	{
+		printf("\nAguardando comando do cliente...\n");
+		fflush(stdout);
+		read(client_sockfd, &command, MESSAGE_SIZE);
+
+		printf("\nRecebemos: %s\n", command);
+		fflush(stdout);
+
+		if (strcmp(command, "escrever") == 0) {
+			// TODO: Atualizar lista de servers depois
+			escrever_client_to_dispatcher_procedure(client_sockfd, server_sockfd, command);
+		} else if (strcmp(command, "ler") == 0) {
+			// TODO: Atualizar lista de servers depois
+			ler_client_to_dispatcher_procedure(client_sockfd, server_sockfd, command);
+		} else if (strcmp(command, "sair") == 0){
+			break;
+		} else {
+			printf("\nComando nao reconhecido, aguardando novo comando.\n");
+		}
+	}
+	close(client_sockfd);
+	return 0;
+}
+
+
 int main()
 {
 	int client_sockfd = 0;
@@ -125,6 +168,9 @@ int main()
 	// TODO: Atualizar lista de servers depois
 	int server_sockfd = 0;
     char command[MESSAGE_SIZE] = "";
+
+	thread_info_t *args;
+	socklen_t client_address_len;
 
 	/* Inicialização de sockets */         
 	struct sockaddr_in address;
@@ -142,36 +188,30 @@ int main()
 	printf("\nServidores conectados\n");
 	fflush(stdout);
 
-	/* Esperando um unico cliente uma unica vez */         
-	printf("\nDispatcher rodando, aguardando contato com cliente\n");
-	fflush(stdout);
-	client_sockfd = accept(dispatcher_sockfd, (struct sockaddr*)NULL, NULL);
-	printf("\nCliente conectado\n");
-	fflush(stdout);
-
-	/* Operações pós conexão */         
-	while(1)
-	{
-		printf("\nAguardando comando do cliente...\n");
-		fflush(stdout);
-        read(client_sockfd, &command, MESSAGE_SIZE);
-
-		printf("\nRecebemos: %s\n", command);
+	while(1) {
+		/* Esperando Clientes */         
+		printf("\nDispatcher rodando, aguardando contato com cliente\n");
 		fflush(stdout);
 
-		if (strcmp(command, "escrever") == 0) {
-			// TODO: Atualizar lista de servers depois
-			escrever_client_to_dispatcher_procedure(client_sockfd, server_sockfd, command);
-		} else if (strcmp(command, "ler") == 0) {
-			// TODO: Atualizar lista de servers depois
-			ler_client_to_dispatcher_procedure(client_sockfd, server_sockfd, command);
-		} else if (strcmp(command, "sair") == 0){
-            break;
-		} else {
-			printf("\nComando nao reconhecido, aguardando novo comando.\n");
-		}
-    }
- 	close(client_sockfd);
+		/* Gerenciando conexão */         
+		client_address_len = sizeof args->client_address;
+		client_sockfd = accept(server_sockfd, (struct sockaddr*)&args->client_address, &client_address_len);
+		printf("\nCliente conectado\n");
+		fflush(stdout);
+
+		/* Construindo argumentos para thread */         
+		args->client_sockfd = client_sockfd;
+		args->server_sockfd = server_sockfd;
+		pthread_t t;
+
+		/* Operações pós conexão */ 
+		if(pthread_create(&t, NULL, serve_connected_client, args)) {
+            free(args);
+			printf("Criação da thread falhou\n");
+        	return 1;
+        }
+	}
+	close(dispatcher_sockfd);
  
     return 0;
 }
